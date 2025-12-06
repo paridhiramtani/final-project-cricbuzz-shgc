@@ -13,27 +13,43 @@ const userLogin = require('./Api/Routes/userLogin')
 
 const { default: mongoose } = require('mongoose')
 
-const db = 'mongodb+srv://AeshaBhavsar:vUzajAAhS3nb3U0P@cluster0.ahc1z.mongodb.net/cricbuzz?retryWrites=true&w=majority&appName=Cluster0'
-mongoose.connect(db).then(() => console.log( 'Database Connected' ))
-.catch(err => console.log( err ));
+const db = process.env.MONGODB_URI
+mongoose.connect(db)
+    .then(() => console.log('Database Connected'))
+    .catch(err => console.log('Database connection error:', err))
 
-app.use(cors(
-    {
-        origin : 'http://localhost:4200'
-    }
-))
+// CORS configuration with environment variable
+const allowedOrigins = process.env.ALLOWED_ORIGINS 
+    ? process.env.ALLOWED_ORIGINS.split(',') 
+    : ['http://localhost:4200']
 
-app.use(bodyParser.urlencoded({extended:true}))
-app.use(bodyParser.json({extended:true}))
+app.use(cors({
+    origin: function(origin, callback) {
+        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true)
+        } else {
+            callback(new Error('Not allowed by CORS'))
+        }
+    },
+    credentials: true
+}))
 
-app.use('/players',Router_players)
-app.use('/livescores',LiveScore_router)
-app.use('/pointtable' , pointTable)
-app.use('/t20',t20_rank)
-app.use('/odi',odi_rank)
-app.use('/test',test_rank)
-app.use('/matches',matches)
+app.use(bodyParser.urlencoded({extended: true}))
+app.use(bodyParser.json({extended: true}))
+
+app.use('/players', Router_players)
+app.use('/livescores', LiveScore_router)
+app.use('/pointtable', pointTable)
+app.use('/t20', t20_rank)
+app.use('/odi', odi_rank)
+app.use('/test', test_rank)
+app.use('/matches', matches)
 app.use('/', userLogin)
 
-module.exports = app
+// Error handling middleware
+app.use((err, req, res, next) => {
+    console.error(err.stack)
+    res.status(500).json({ message: 'Something went wrong!', error: err.message })
+})
 
+module.exports = app
