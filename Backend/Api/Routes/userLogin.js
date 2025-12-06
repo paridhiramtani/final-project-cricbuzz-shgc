@@ -47,14 +47,12 @@ router.post("/signup", async (req, res) => {
     
     // Send email
     const transporter = nodemailer.createTransport({
-      service: process.env.EMAIL_SERVICE || "Gmail",
-      secure: true,
-      port: 465,
+      service: "Gmail",
       auth: {
         user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD,
+        pass: process.env.EMAIL_PASS,
       },
-    })
+    });
     
     let htmlContent = `
     <html>
