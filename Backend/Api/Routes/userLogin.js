@@ -24,26 +24,30 @@ router.get("/", async (req, res) => {
 })
 
 router.post("/signup", async (req, res) => {
-  const {name, email, password} = req.body
-  
+  const { name, email, password } = req.body;
   try {
-    // Check if user exists
-    const existingUser = await userLogin.findOne({email})
+    const existingUser = await userLogin.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({message: "User already exists"})
+      return res.status(400).json({ message: "User already exists" });
     }
-    
-    // Hash password
-    const salt = await bcrypt.genSalt(10)
-    const hashedPassword = await bcrypt.hash(password, salt)
-    
-    // Create new user
+
+    // HASH PASSWORD HERE
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     const newUser = new userLogin({
       name,
       email,
-      password: hashedPassword
-    })
-    await newUser.save()
+      password: hashedPassword // Save the hash, not the plain text
+    });
+    await newUser.save();
+    
+    // ... (Keep your email logic here) ...
+    
+    res.status(201).json({ message: 'User created successfully.' });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
     
     // Send email
     const transporter = nodemailer.createTransport({
