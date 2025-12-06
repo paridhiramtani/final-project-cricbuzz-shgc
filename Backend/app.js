@@ -1,3 +1,5 @@
+require('dotenv').config(); // Ensure this is at the top
+const mongoose = require('mongoose');
 const bodyParser = require('body-parser')
 const express = require('express')
 const cors = require('cors')
@@ -14,9 +16,9 @@ const userLogin = require('./Api/Routes/userLogin')
 const { default: mongoose } = require('mongoose')
 
 const db = process.env.MONGODB_URI
-mongoose.connect(db)
+mongoose.connect(process.env.MONGO_URI)
     .then(() => console.log('Database Connected'))
-    .catch(err => console.log('Database connection error:', err))
+    .catch(err => console.log(err));
 
 // CORS configuration with environment variable
 const allowedOrigins = process.env.ALLOWED_ORIGINS 
