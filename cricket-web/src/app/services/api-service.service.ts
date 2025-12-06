@@ -1,15 +1,23 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { map, Observable } from 'rxjs';
-import { JwtHelperService } from '@auth0/angular-jwt';
-import { routes } from './../app.routes';
+import { Observable } from 'rxjs';
 import { Router } from '@angular/router';
-
+import { environment } from '../../environments/environment';
 
 interface User {
-  name?:string,
-  email:string,
-  password:string
+  name?: string;
+  email: string;
+  password: string;
+}
+
+interface LoginResponse {
+  message: string;
+  token: string;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+  };
 }
 
 @Injectable({
@@ -17,81 +25,96 @@ interface User {
 })
 export class ApiServiceService {
   private loggedInKey = 'loggedIn'
+  private tokenKey = 'authToken'
+  private userKey = 'currentUser'
 
-  baseUrl:string = "http://localhost:8080/livescores"
-  playerUrl:string = "http://localhost:8080/players"
-  pointTableUrl:string = "http://localhost:8080/pointtable"
-  matchesUrl:string = "http://localhost:8080/matches"
-  t20Url:string = "http://localhost:8080/t20"
-  testUrl:string = "http://localhost:8080/test"
-  odiUrl:string = "http://localhost:8080/odi"
+  private baseUrl = 'http://localhost:8080'
 
-  userLoginAPI:string = "http://localhost:8080"
+  constructor(private http: HttpClient, public router: Router) { }
 
-  constructor(private http : HttpClient , public router:Router , private jwtHelper: JwtHelperService) { }
+  private getHeaders(): HttpHeaders {
+    const token = this.getToken()
+    return new HttpHeaders({
+      'Content-Type': 'application/json',
+      'Authorization': token ? `Bearer ${token}` : ''
+    })
+  }
 
-getMatchScore(){
-  return this.http.get(this.baseUrl)
-}
+  getMatchScore(): Observable<any> {
+    return this.http.get(`${this.baseUrl}/livescores`)
+  }
 
-getPlayerData(){
-  return this.http.get(this.playerUrl)
-}
+  getPlayerData(): Observable<any> {
+    return this.http.get(`${this.baseUrl}/players`)
+  }
 
-getPointTable(){
-  return this.http.get(this.pointTableUrl)
-}
- 
-matches(){
-  return this.http.get(this.matchesUrl)
-}
+  getPointTable(): Observable<any> {
+    return this.http.get(`${this.baseUrl}/pointtable`)
+  }
 
-addPlayerData(players:any){
-  return this.http.post(this.playerUrl,players);
-}
+  matches(): Observable<any> {
+    return this.http.get(`${this.baseUrl}/matches`)
+  }
 
-updatePlayer(id:string){
-  return this.http.get(`${this.playerUrl}/${id}`);
-}
+  addPlayerData(players: any): Observable<any> {
+    return this.http.post(`${this.baseUrl}/players`, players)
+  }
 
-updatePlayerData(playerData:any){
-  return this.http.put(`${this.playerUrl}/${playerData._id}`, playerData);
-}
+  updatePlayer(id: string): Observable<any> {
+    return this.http.get(`${this.baseUrl}/players/${id}`)
+  }
 
-deletePlayers(id:string){
-  return this.http.delete(`${this.playerUrl}/${id}`);
-}
+  updatePlayerData(playerData: any): Observable<any> {
+    return this.http.put(`${this.baseUrl}/players/${playerData._id}`, playerData)
+  }
 
-t20Data(){
-  return this.http.get(this.t20Url);
-}
+  deletePlayers(id: string): Observable<any> {
+    return this.http.delete(`${this.baseUrl}/players/${id}`)
+  }
 
-testData(){
-  return this.http.get(this.testUrl);
-}
+  t20Data(): Observable<any> {
+    return this.http.get(`${this.baseUrl}/t20`)
+  }
 
-odiData(){
-  return this.http.get(this.odiUrl);
-}
+  testData(): Observable<any> {
+    return this.http.get(`${this.baseUrl}/test`)
+  }
 
-usersSignUp(user:User):Observable<any>{
-  return this.http.post(`${this.userLoginAPI}/signup`,user)
-}
+  odiData(): Observable<any> {
+    return this.http.get(`${this.baseUrl}/odi`)
+  }
 
-usersLogin(user: User):Observable<any>{
-  return this.http.post(`${this.userLoginAPI}/login`,user)
-}
+  usersSignUp(user: User): Observable<any> {
+    return this.http.post(`${this.baseUrl}/signup`, user)
+  }
 
-login(){
-  sessionStorage.setItem(this.loggedInKey,'true')
-}
+  usersLogin(user: User): Observable<LoginResponse> {
+    return this.http.post<LoginResponse>(`${this.baseUrl}/login`, user)
+  }
 
-logout(){
-  sessionStorage.removeItem(this.loggedInKey)
-}
+  login(token: string, user: any): void {
+    sessionStorage.setItem(this.loggedInKey, 'true')
+    sessionStorage.setItem(this.tokenKey, token)
+    sessionStorage.setItem(this.userKey, JSON.stringify(user))
+  }
 
-isLoggedIn():boolean{
-  return sessionStorage.getItem(this.loggedInKey) === 'true'
-}
+  logout(): void {
+    sessionStorage.removeItem(this.loggedInKey)
+    sessionStorage.removeItem(this.tokenKey)
+    sessionStorage.removeItem(this.userKey)
+  }
 
+  isLoggedIn(): boolean {
+    return sessionStorage.getItem(this.loggedInKey) === 'true' && 
+           this.getToken() !== null
+  }
+
+  getToken(): string | null {
+    return sessionStorage.getItem(this.tokenKey)
+  }
+
+  getCurrentUser(): any {
+    const user = sessionStorage.getItem(this.userKey)
+    return user ? JSON.parse(user) : null
+  }
 }
