@@ -20,11 +20,8 @@ import { catchError, throwError } from 'rxjs';
   styleUrl: './login.component.css',
 })
 export class LoginComponent {
-  email: string = '';
-  password: string = '';
-
   loginForm: FormGroup;
-  passwordFieldType: any = 'password';
+  passwordFieldType: string = 'password';
 
   constructor(
     private fb: FormBuilder,
@@ -52,40 +49,47 @@ export class LoginComponent {
                 showConfirmButton: true,
                 confirmButtonText: 'OK',
               });
-            }
-
-            if (error.status === 400) {
+            } else if (error.status === 400) {
               Swal.fire({
                 icon: 'error',
-                title: `'User not exists 😵'`,
-                text: `User not found. Please Register..👍`,
+                title: 'User not exists',
+                text: 'User not found. Please Register first.',
+                showConfirmButton: true,
+                confirmButtonText: 'OK',
+              });
+            } else {
+              Swal.fire({
+                icon: 'error',
+                title: 'Login Failed',
+                text: 'An error occurred. Please try again.',
                 showConfirmButton: true,
                 confirmButtonText: 'OK',
               });
             }
-
-            return throwError(error);
+            return throwError(() => error);
           })
         )
-        .subscribe((res) => {
-          console.log(res, 'login data');
-          Swal.fire({
-            icon: 'success',
-            title: 'Login Successfully..!',
-            text: 'All THE BEST 👍✌️',
-            showConfirmButton: true,
-            confirmButtonText: 'OK',
-          });
-          this.loginService.login();
-          this.router.navigate(['matches']);
-        }),
-        (error: any) => {
-          console.error('login Failed', error);
-        };
+        .subscribe({
+          next: (res) => {
+            console.log(res, 'login data');
+            Swal.fire({
+              icon: 'success',
+              title: 'Login Successfully..!',
+              text: 'Welcome back!',
+              showConfirmButton: true,
+              confirmButtonText: 'OK',
+            });
+            this.loginService.login(res.token, res.user);
+            this.router.navigate(['matches']);
+          },
+          error: (err) => {
+            console.error('Login Failed', err);
+          }
+        });
     }
   }
 
-  togglePasswordView() {
+  togglePasswordView(): void {
     this.passwordFieldType =
       this.passwordFieldType === 'password' ? 'text' : 'password';
   }
